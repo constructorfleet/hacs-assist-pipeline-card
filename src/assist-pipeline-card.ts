@@ -1,6 +1,6 @@
 const CARD_TAG = "assist-pipeline-card";
 const HACS_CARD_TAG = "hacs-assist-pipeline-card";
-const CARD_VERSION = "0.1.6";
+const CARD_VERSION = "0.1.7";
 const DEFAULT_NAME = "Assist";
 const DEFAULT_ICON = "mdi:comment-processing-outline";
 
@@ -905,12 +905,29 @@ class AssistPipelineCardEditor extends HTMLElement {
     `;
 
     root.querySelectorAll("input, select, ha-icon-picker").forEach((field) => {
-      field.addEventListener("change", () => this._valueChanged(field));
-      field.addEventListener("value-changed", () => this._valueChanged(field));
+      field.addEventListener("change", (event) => {
+        event.stopPropagation();
+        this._valueChanged(field);
+      });
+      field.addEventListener("value-changed", (event) => {
+        event.stopPropagation();
+        this._valueChanged(field);
+      });
       if (field instanceof HTMLInputElement && field.type === "text") {
-        field.addEventListener("input", () => this._valueChanged(field));
+        field.addEventListener("input", (event) => {
+          event.stopPropagation();
+          this._valueChanged(field);
+        });
       }
     });
+
+    root.querySelector(".editor")?.addEventListener("click", stopEditorEvent);
+    root.querySelector(".editor")?.addEventListener("mousedown", stopEditorEvent);
+    root.querySelector(".editor")?.addEventListener("mouseup", stopEditorEvent);
+    root.querySelector(".editor")?.addEventListener("pointerdown", stopEditorEvent);
+    root.querySelector(".editor")?.addEventListener("pointerup", stopEditorEvent);
+    root.querySelector(".editor")?.addEventListener("keydown", stopEditorEvent);
+    root.querySelector(".editor")?.addEventListener("keyup", stopEditorEvent);
   }
 
   private _valueChanged(field: Element): void {
@@ -971,6 +988,10 @@ const errorMessage = (error: unknown): string => {
     return error;
   }
   return "unknown error";
+};
+
+const stopEditorEvent = (event: Event): void => {
+  event.stopPropagation();
 };
 
 const optionTemplate = (

@@ -244,6 +244,35 @@ describe("AssistPipelineCard", () => {
     expect(editor.shadowRoot?.querySelector('[data-field="name"]')).toBe(input);
   });
 
+  it("contains raw visual editor input events while still emitting config changes", () => {
+    const editor = AssistPipelineCard.getConfigElement() as HTMLElement & {
+      setConfig(config: AssistPipelineCardConfig): void;
+    };
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    host.appendChild(editor);
+    editor.setConfig({ placeholder: "Ask Assist" });
+    const leakedInput = vi.fn();
+    const leakedClick = vi.fn();
+    const configChanged = vi.fn();
+    host.addEventListener("input", leakedInput);
+    host.addEventListener("click", leakedClick);
+    host.addEventListener("config-changed", configChanged);
+
+    const placeholder = editor.shadowRoot?.querySelector(
+      '[data-field="placeholder"]'
+    ) as HTMLInputElement;
+    placeholder.value = "Ask Eddie";
+    placeholder.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
+    placeholder.dispatchEvent(
+      new MouseEvent("click", { bubbles: true, composed: true })
+    );
+
+    expect(leakedInput).not.toHaveBeenCalled();
+    expect(leakedClick).not.toHaveBeenCalled();
+    expect(configChanged).toHaveBeenCalledTimes(1);
+  });
+
   it("sends text through the Assist pipeline websocket and renders the reply", async () => {
     const { card, emitPipelineEvent, unsubscribe, subscribeMessage } =
       await createCard();

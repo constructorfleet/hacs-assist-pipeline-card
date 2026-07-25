@@ -1,9 +1,9 @@
-const d = "assist-pipeline-card", _ = "hacs-assist-pipeline-card", v = "0.1.6", u = "Assist", g = "mdi:comment-processing-outline";
-class b extends HTMLElement {
+const f = "assist-pipeline-card", m = "hacs-assist-pipeline-card", y = "0.1.7", x = "Assist", b = "mdi:comment-processing-outline";
+class w extends HTMLElement {
   constructor() {
     super(...arguments), this._config = {
-      name: u,
-      icon: g,
+      name: x,
+      icon: b,
       pipeline_id: "last_used",
       start_listening: !1,
       appearance: "chat",
@@ -24,8 +24,8 @@ class b extends HTMLElement {
       throw new Error("input_mode must be 'text' or 'audio'");
     const i = this._config;
     this._config = {
-      name: e.name ?? u,
-      icon: e.icon ?? g,
+      name: e.name ?? x,
+      icon: e.icon ?? b,
       pipeline_id: e.pipeline_id ?? "last_used",
       start_listening: e.start_listening ?? !1,
       appearance: e.appearance ?? "chat",
@@ -86,7 +86,7 @@ class b extends HTMLElement {
         this._messages = [
           {
             who: "hass",
-            text: `Could not load Assist pipeline: ${x(i)}`,
+            text: `Could not load Assist pipeline: ${v(i)}`,
             error: !0
           }
         ];
@@ -102,12 +102,12 @@ class b extends HTMLElement {
     if (this._config.pipeline_id === "last_used")
       return this._lastUsedPipeline ?? this._preferredPipeline ?? ((s = e[0]) == null ? void 0 : s.id);
     const i = e.find(
-      (p) => p.id === this._config.pipeline_id
+      (l) => l.id === this._config.pipeline_id
     );
     return (i == null ? void 0 : i.id) ?? this._preferredPipeline ?? ((t = e[0]) == null ? void 0 : t.id);
   }
   _render() {
-    var p, a, c, f;
+    var l, n, c, u;
     const e = this.shadowRoot ?? this.attachShadow({ mode: "open" }), i = this._config.appearance === "button", s = ["button", "card"].includes(this._config.appearance);
     e.innerHTML = `
       <style>
@@ -303,17 +303,17 @@ class b extends HTMLElement {
         }
       </style>
       ${s ? i ? this._buttonTemplate() : `<ha-card>${this._buttonTemplate()}</ha-card>` : this._chatTemplate()}
-    `, (p = e.querySelector(".open-button")) == null || p.addEventListener("click", () => {
+    `, (l = e.querySelector(".open-button")) == null || l.addEventListener("click", () => {
       this._openAssistDialog();
-    }), (a = e.querySelector("form")) == null || a.addEventListener("submit", (h) => {
-      h.preventDefault();
-      const l = e.querySelector("input"), m = l == null ? void 0 : l.value.trim();
-      m && (l.value = "", this._sendMessage(m));
-    }), (c = e.querySelector(".voice-button")) == null || c.addEventListener("click", () => this._openAssistDialog()), (f = e.querySelector(".pipeline-select")) == null || f.addEventListener("change", (h) => {
-      const l = h.target.value;
+    }), (n = e.querySelector("form")) == null || n.addEventListener("submit", (_) => {
+      _.preventDefault();
+      const d = e.querySelector("input"), a = d == null ? void 0 : d.value.trim();
+      a && (d.value = "", this._sendMessage(a));
+    }), (c = e.querySelector(".voice-button")) == null || c.addEventListener("click", () => this._openAssistDialog()), (u = e.querySelector(".pipeline-select")) == null || u.addEventListener("change", (_) => {
+      const d = _.target.value;
       this._config = {
         ...this._config,
-        pipeline_id: l
+        pipeline_id: d
       }, this._pipeline = void 0, this._pipelineLoadKey = void 0, this._ensurePipelineLoaded(), this._render();
     });
     const t = e.querySelector(".messages");
@@ -322,11 +322,11 @@ class b extends HTMLElement {
   _buttonTemplate() {
     return `
       <div class="button-content">
-        <button class="open-button" type="button" aria-label="${n(
+        <button class="open-button" type="button" aria-label="${r(
       this._config.name
     )}">
-          <ha-icon icon="${n(this._config.icon)}"></ha-icon>
-          <span class="label">${n(this._config.name)}</span>
+          <ha-icon icon="${r(this._config.icon)}"></ha-icon>
+          <span class="label">${r(this._config.name)}</span>
         </button>
       </div>
     `;
@@ -343,7 +343,7 @@ class b extends HTMLElement {
             <input
               type="text"
               autocomplete="off"
-              placeholder="${n(this._config.placeholder)}"
+              placeholder="${r(this._config.placeholder)}"
               ${this._processing || this._loading || !this._pipeline ? "disabled" : ""}
             />
             <button
@@ -360,13 +360,13 @@ class b extends HTMLElement {
       <ha-card>
         <div class="chat">
           <div class="header">
-            <ha-icon icon="${n(this._config.icon)}"></ha-icon>
-            <div class="title">${n(this._config.name)}</div>
+            <ha-icon icon="${r(this._config.icon)}"></ha-icon>
+            <div class="title">${r(this._config.name)}</div>
             <div class="pipeline">${this._pipelineControlTemplate()}</div>
           </div>
           <div class="messages">
             ${this._messages.map(
-      (i) => `<div class="message ${i.who}${i.error ? " error" : ""}">${n(i.text)}</div>`
+      (i) => `<div class="message ${i.who}${i.error ? " error" : ""}">${r(i.text)}</div>`
     ).join("")}
           </div>
           ${e}
@@ -377,17 +377,17 @@ class b extends HTMLElement {
   _pipelineControlTemplate() {
     var s;
     if (!this._config.show_pipeline_selector)
-      return n(
+      return r(
         this._loading ? "Loading..." : ((s = this._pipeline) == null ? void 0 : s.name) ?? "No pipeline"
       );
     const e = this._config.pipeline_id;
     return `
       <select class="pipeline-select" aria-label="Assist pipeline">
         ${[
-      r("last_used", "Last used", e),
-      r("preferred", "Preferred", e),
+      p("last_used", "Last used", e),
+      p("preferred", "Preferred", e),
       ...this._pipelines.map(
-        (t) => r(t.id, t.name, e)
+        (t) => p(t.id, t.name, e)
       )
     ].join("")}
       </select>
@@ -417,21 +417,21 @@ class b extends HTMLElement {
         }
       );
     } catch (t) {
-      i.text = `Error starting Assist: ${x(t)}`, i.error = !0, i.pending = !1, this._processing = !1, this._render();
+      i.text = `Error starting Assist: ${v(t)}`, i.error = !0, i.pending = !1, this._processing = !1, this._render();
     }
   }
   _processPipelineEvent(e, i, s) {
-    var t, p;
+    var t, l;
     if (e.type === "intent-progress") {
-      const a = e.data.chat_log_delta;
-      (a == null ? void 0 : a.role) === "assistant" && a.content && (i.text = i.pending ? a.content : `${i.text}${a.content}`, i.pending = !1, this._render());
+      const n = e.data.chat_log_delta;
+      (n == null ? void 0 : n.role) === "assistant" && n.content && (i.text = i.pending ? n.content : `${i.text}${n.content}`, i.pending = !1, this._render());
       return;
     }
     if (e.type === "intent-end") {
-      const a = e.data.intent_output;
-      this._conversationId = a.conversation_id;
-      const c = (p = (t = a.response.speech) == null ? void 0 : t.plain) == null ? void 0 : p.speech;
-      c ? i.text = c : i.pending && (i.text = ""), i.error = a.response.response_type === "error", i.pending = !1, this._processing = !1, s(), this._render();
+      const n = e.data.intent_output;
+      this._conversationId = n.conversation_id;
+      const c = (l = (t = n.response.speech) == null ? void 0 : t.plain) == null ? void 0 : l.speech;
+      c ? i.text = c : i.pending && (i.text = ""), i.error = n.response.response_type === "error", i.pending = !1, this._processing = !1, s(), this._render();
       return;
     }
     e.type === "error" && (i.text = e.data.message, i.error = !0, i.pending = !1, this._processing = !1, s(), this._render());
@@ -453,9 +453,9 @@ class b extends HTMLElement {
     }, this.dispatchEvent(e);
   }
 }
-class w extends b {
+class E extends w {
 }
-class y extends HTMLElement {
+class $ extends HTMLElement {
   constructor() {
     super(...arguments), this._config = {}, this._pipelines = [], this._loadingPipelines = !1;
   }
@@ -489,9 +489,10 @@ class y extends HTMLElement {
     }
   }
   _render() {
+    var t, l, n, c, u, _, d;
     const e = this.shadowRoot ?? this.attachShadow({ mode: "open" }), i = {
-      name: this._config.name ?? u,
-      icon: this._config.icon ?? g,
+      name: this._config.name ?? x,
+      icon: this._config.icon ?? b,
       appearance: this._config.appearance ?? "chat",
       pipeline_id: this._config.pipeline_id ?? "last_used",
       input_mode: this._config.input_mode ?? "text",
@@ -499,14 +500,14 @@ class y extends HTMLElement {
       show_pipeline_selector: this._config.show_pipeline_selector ?? !0,
       start_listening: this._config.start_listening ?? !1
     }, s = [
-      r("last_used", "Last used", i.pipeline_id),
-      r(
+      p("last_used", "Last used", i.pipeline_id),
+      p(
         "preferred",
         this._preferredPipeline ? "Preferred pipeline" : "Preferred",
         i.pipeline_id
       ),
       ...this._pipelines.map(
-        (t) => r(t.id, t.name, i.pipeline_id)
+        (a) => p(a.id, a.name, i.pipeline_id)
       )
     ].join("");
     e.innerHTML = `
@@ -560,7 +561,7 @@ class y extends HTMLElement {
       <div class="editor">
         <label>
           Name
-          <input data-field="name" type="text" value="${n(i.name)}" />
+          <input data-field="name" type="text" value="${r(i.name)}" />
         </label>
         <label>
           Icon
@@ -568,23 +569,23 @@ class y extends HTMLElement {
                 <ha-icon-picker
                   data-field="icon"
                   label="Icon"
-                  value="${n(i.icon)}"
+                  value="${r(i.icon)}"
                 ></ha-icon-picker>
-              ` : `<input data-field="icon" type="text" value="${n(i.icon)}" />`}
+              ` : `<input data-field="icon" type="text" value="${r(i.icon)}" />`}
         </label>
         <label>
           Appearance
           <select data-field="appearance">
-            ${r("chat", "Chat", i.appearance)}
-            ${r("card", "Dialog opener card", i.appearance)}
-            ${r("button", "Dialog opener button", i.appearance)}
+            ${p("chat", "Chat", i.appearance)}
+            ${p("card", "Dialog opener card", i.appearance)}
+            ${p("button", "Dialog opener button", i.appearance)}
           </select>
         </label>
         <label>
           Input mode
           <select data-field="input_mode">
-            ${r("text", "Text chat", i.input_mode)}
-            ${r("audio", "Audio dialog button", i.input_mode)}
+            ${p("text", "Text chat", i.input_mode)}
+            ${p("audio", "Audio dialog button", i.input_mode)}
           </select>
         </label>
         <label>
@@ -598,7 +599,7 @@ class y extends HTMLElement {
           <input
             data-field="placeholder"
             type="text"
-            value="${n(i.placeholder)}"
+            value="${r(i.placeholder)}"
             ${i.input_mode === "audio" ? "disabled" : ""}
           />
         </label>
@@ -619,9 +620,15 @@ class y extends HTMLElement {
           Start listening when opening the native Assist dialog
         </label>
       </div>
-    `, e.querySelectorAll("input, select, ha-icon-picker").forEach((t) => {
-      t.addEventListener("change", () => this._valueChanged(t)), t.addEventListener("value-changed", () => this._valueChanged(t)), t instanceof HTMLInputElement && t.type === "text" && t.addEventListener("input", () => this._valueChanged(t));
-    });
+    `, e.querySelectorAll("input, select, ha-icon-picker").forEach((a) => {
+      a.addEventListener("change", (g) => {
+        g.stopPropagation(), this._valueChanged(a);
+      }), a.addEventListener("value-changed", (g) => {
+        g.stopPropagation(), this._valueChanged(a);
+      }), a instanceof HTMLInputElement && a.type === "text" && a.addEventListener("input", (g) => {
+        g.stopPropagation(), this._valueChanged(a);
+      });
+    }), (t = e.querySelector(".editor")) == null || t.addEventListener("click", h), (l = e.querySelector(".editor")) == null || l.addEventListener("mousedown", h), (n = e.querySelector(".editor")) == null || n.addEventListener("mouseup", h), (c = e.querySelector(".editor")) == null || c.addEventListener("pointerdown", h), (u = e.querySelector(".editor")) == null || u.addEventListener("pointerup", h), (_ = e.querySelector(".editor")) == null || _.addEventListener("keydown", h), (d = e.querySelector(".editor")) == null || d.addEventListener("keyup", h);
   }
   _valueChanged(e) {
     const i = e.dataset.field;
@@ -642,7 +649,7 @@ class y extends HTMLElement {
     );
   }
 }
-const n = (o) => o.replace(/[&<>"']/g, (e) => {
+const r = (o) => o.replace(/[&<>"']/g, (e) => {
   switch (e) {
     case "&":
       return "&amp;";
@@ -657,28 +664,30 @@ const n = (o) => o.replace(/[&<>"']/g, (e) => {
     default:
       return e;
   }
-}), x = (o) => o instanceof Error ? o.message : typeof o == "string" ? o : "unknown error", r = (o, e, i) => `
-  <option value="${n(o)}" ${o === i ? "selected" : ""}>
-    ${n(e)}
+}), v = (o) => o instanceof Error ? o.message : typeof o == "string" ? o : "unknown error", h = (o) => {
+  o.stopPropagation();
+}, p = (o, e, i) => `
+  <option value="${r(o)}" ${o === i ? "selected" : ""}>
+    ${r(e)}
   </option>
 `;
-customElements.get(d) || customElements.define(d, b);
-customElements.get(_) || customElements.define(_, w);
-customElements.get("assist-pipeline-card-editor") || customElements.define("assist-pipeline-card-editor", y);
+customElements.get(f) || customElements.define(f, w);
+customElements.get(m) || customElements.define(m, E);
+customElements.get("assist-pipeline-card-editor") || customElements.define("assist-pipeline-card-editor", $);
 window.customCards = window.customCards ?? [];
 window.customCards.push({
-  type: d,
+  type: f,
   name: "Assist Pipeline Card",
   description: "Chat with Home Assistant Assist from a dashboard card."
 });
 console.info(
-  `%cAssist Pipeline Card v${v} loaded`,
+  `%cAssist Pipeline Card v${y} loaded`,
   "color: #03a9f4; font-weight: 700;",
   {
-    elements: [`custom:${d}`, `custom:${_}`]
+    elements: [`custom:${f}`, `custom:${m}`]
   }
 );
 export {
-  b as AssistPipelineCard
+  w as AssistPipelineCard
 };
 //# sourceMappingURL=hacs-assist-pipeline-card.js.map
