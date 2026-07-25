@@ -1,6 +1,6 @@
 const CARD_TAG = "assist-pipeline-card";
 const HACS_CARD_TAG = "hacs-assist-pipeline-card";
-const CARD_VERSION = "0.1.2";
+const CARD_VERSION = "0.1.3";
 const DEFAULT_NAME = "Assist";
 const DEFAULT_ICON = "mdi:comment-processing-outline";
 
@@ -617,18 +617,11 @@ if (!customElements.get(HACS_CARD_TAG)) {
 }
 
 window.customCards = window.customCards ?? [];
-window.customCards.push(
-  {
-    type: `custom:${CARD_TAG}`,
-    name: "Assist Pipeline Card",
-    description: "Chat with Home Assistant Assist from a dashboard card.",
-  },
-  {
-    type: `custom:${HACS_CARD_TAG}`,
-    name: "Assist Pipeline Card",
-    description: "Alias for Assist Pipeline Card.",
-  }
-);
+window.customCards.push({
+  type: CARD_TAG,
+  name: "Assist Pipeline Card",
+  description: "Chat with Home Assistant Assist from a dashboard card.",
+});
 
 console.info(
   `%cAssist Pipeline Card v${CARD_VERSION} loaded`,

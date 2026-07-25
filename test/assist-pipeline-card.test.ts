@@ -119,10 +119,16 @@ describe("AssistPipelineCard", () => {
     expect(customElements.get("hacs-assist-pipeline-card")).toBeDefined();
   });
 
-  it("registers custom card picker metadata for both names", () => {
+  it("registers custom card picker metadata with the raw element name", () => {
     expect(window.customCards).toEqual(
       expect.arrayContaining([
+        expect.objectContaining({ type: "assist-pipeline-card" }),
+      ])
+    );
+    expect(window.customCards).not.toEqual(
+      expect.arrayContaining([
         expect.objectContaining({ type: "custom:assist-pipeline-card" }),
+        expect.objectContaining({ type: "hacs-assist-pipeline-card" }),
         expect.objectContaining({ type: "custom:hacs-assist-pipeline-card" }),
       ])
     );

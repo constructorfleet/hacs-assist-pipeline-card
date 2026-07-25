@@ -1,4 +1,4 @@
-const c = "assist-pipeline-card", d = "hacs-assist-pipeline-card", m = "0.1.2", u = "Assist", _ = "mdi:comment-processing-outline";
+const c = "assist-pipeline-card", d = "hacs-assist-pipeline-card", m = "0.1.3", u = "Assist", _ = "mdi:comment-processing-outline";
 class f extends HTMLElement {
   constructor() {
     super(...arguments), this._config = {
@@ -393,18 +393,11 @@ const r = (a) => a.replace(/[&<>"']/g, (e) => {
 customElements.get(c) || customElements.define(c, f);
 customElements.get(d) || customElements.define(d, x);
 window.customCards = window.customCards ?? [];
-window.customCards.push(
-  {
-    type: `custom:${c}`,
-    name: "Assist Pipeline Card",
-    description: "Chat with Home Assistant Assist from a dashboard card."
-  },
-  {
-    type: `custom:${d}`,
-    name: "Assist Pipeline Card",
-    description: "Alias for Assist Pipeline Card."
-  }
-);
+window.customCards.push({
+  type: c,
+  name: "Assist Pipeline Card",
+  description: "Chat with Home Assistant Assist from a dashboard card."
+});
 console.info(
   `%cAssist Pipeline Card v${m} loaded`,
   "color: #03a9f4; font-weight: 700;",
