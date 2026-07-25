@@ -37,6 +37,8 @@ jobs:
           mkdir -p release/assist-pipeline-card
           cp dist/hacs-assist-pipeline-card.js release/assist-pipeline-card/
           cp dist/hacs-assist-pipeline-card.js.map release/assist-pipeline-card/
+          cp dist/assist-pipeline-card.js release/assist-pipeline-card/
+          cp dist/assist-pipeline-card.js.map release/assist-pipeline-card/
           cp hacs.json README.md LICENSE release/assist-pipeline-card/
           cd release
           zip -r assist-pipeline-card-${GITHUB_REF_NAME}.zip assist-pipeline-card
@@ -59,5 +61,7 @@ jobs:
             "release/assist-pipeline-card-${GITHUB_REF_NAME}.zip" \
             "dist/hacs-assist-pipeline-card.js" \
             "dist/hacs-assist-pipeline-card.js.map" \
+            "dist/assist-pipeline-card.js" \
+            "dist/assist-pipeline-card.js.map" \
             --title "${GITHUB_REF_NAME}" \
             --notes-file release-notes.md

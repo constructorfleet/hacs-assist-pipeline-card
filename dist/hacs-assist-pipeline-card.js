@@ -1,9 +1,9 @@
-const c = "assist-pipeline-card", h = "Assist", u = "mdi:comment-processing-outline";
-class g extends HTMLElement {
+const c = "assist-pipeline-card", d = "hacs-assist-pipeline-card", u = "Assist", _ = "mdi:comment-processing-outline";
+class f extends HTMLElement {
   constructor() {
     super(...arguments), this._config = {
-      name: h,
-      icon: u,
+      name: u,
+      icon: _,
       pipeline_id: "last_used",
       start_listening: !1,
       appearance: "chat",
@@ -19,8 +19,8 @@ class g extends HTMLElement {
     if (e.appearance && !["card", "button", "chat"].includes(e.appearance))
       throw new Error("appearance must be 'chat', 'card', or 'button'");
     this._config = {
-      name: e.name ?? h,
-      icon: e.icon ?? u,
+      name: e.name ?? u,
+      icon: e.icon ?? _,
       pipeline_id: e.pipeline_id ?? "last_used",
       start_listening: e.start_listening ?? !1,
       appearance: e.appearance ?? "chat",
@@ -68,7 +68,7 @@ class g extends HTMLElement {
         this._messages = [
           {
             who: "hass",
-            text: `Could not load Assist pipeline: ${_(e)}`,
+            text: `Could not load Assist pipeline: ${g(e)}`,
             error: !0
           }
         ];
@@ -253,8 +253,8 @@ class g extends HTMLElement {
       this._openAssistDialog();
     }), (s = e.querySelector("form")) == null || s.addEventListener("submit", (p) => {
       p.preventDefault();
-      const l = e.querySelector("input"), d = l == null ? void 0 : l.value.trim();
-      d && (l.value = "", this._sendMessage(d));
+      const l = e.querySelector("input"), h = l == null ? void 0 : l.value.trim();
+      h && (l.value = "", this._sendMessage(h));
     });
     const t = e.querySelector(".messages");
     t && (t.scrollTop = t.scrollHeight);
@@ -262,11 +262,11 @@ class g extends HTMLElement {
   _buttonTemplate() {
     return `
       <div class="button-content">
-        <button class="open-button" type="button" aria-label="${r(
+        <button class="open-button" type="button" aria-label="${a(
       this._config.name
     )}">
-          <ha-icon icon="${r(this._config.icon)}"></ha-icon>
-          <span class="label">${r(this._config.name)}</span>
+          <ha-icon icon="${a(this._config.icon)}"></ha-icon>
+          <span class="label">${a(this._config.name)}</span>
         </button>
       </div>
     `;
@@ -277,9 +277,9 @@ class g extends HTMLElement {
       <ha-card>
         <div class="chat">
           <div class="header">
-            <ha-icon icon="${r(this._config.icon)}"></ha-icon>
-            <div class="title">${r(this._config.name)}</div>
-            <div class="pipeline">${r(
+            <ha-icon icon="${a(this._config.icon)}"></ha-icon>
+            <div class="title">${a(this._config.name)}</div>
+            <div class="pipeline">${a(
       this._loading ? "Loading..." : ((e = this._pipeline) == null ? void 0 : e.name) ?? "No pipeline"
     )}</div>
           </div>
@@ -287,7 +287,7 @@ class g extends HTMLElement {
             ${this._messages.map(
       (i) => `
                   <div class="message ${i.who}${i.error ? " error" : ""}">
-                    ${r(i.text)}
+                    ${a(i.text)}
                   </div>
                 `
     ).join("")}
@@ -296,7 +296,7 @@ class g extends HTMLElement {
             <input
               type="text"
               autocomplete="off"
-              placeholder="${r(this._config.placeholder)}"
+              placeholder="${a(this._config.placeholder)}"
               ${this._processing || this._loading || !this._pipeline ? "disabled" : ""}
             />
             <button
@@ -336,7 +336,7 @@ class g extends HTMLElement {
         }
       );
     } catch (t) {
-      i.text = `Error starting Assist: ${_(t)}`, i.error = !0, i.pending = !1, this._processing = !1, this._render();
+      i.text = `Error starting Assist: ${g(t)}`, i.error = !0, i.pending = !1, this._processing = !1, this._render();
     }
   }
   _processPipelineEvent(e, i, n) {
@@ -372,7 +372,9 @@ class g extends HTMLElement {
     }, this.dispatchEvent(e);
   }
 }
-const r = (a) => a.replace(/[&<>"']/g, (e) => {
+class m extends f {
+}
+const a = (r) => r.replace(/[&<>"']/g, (e) => {
   switch (e) {
     case "&":
       return "&amp;";
@@ -387,15 +389,23 @@ const r = (a) => a.replace(/[&<>"']/g, (e) => {
     default:
       return e;
   }
-}), _ = (a) => a instanceof Error ? a.message : typeof a == "string" ? a : "unknown error";
-customElements.get(c) || customElements.define(c, g);
+}), g = (r) => r instanceof Error ? r.message : typeof r == "string" ? r : "unknown error";
+customElements.get(c) || customElements.define(c, f);
+customElements.get(d) || customElements.define(d, m);
 window.customCards = window.customCards ?? [];
-window.customCards.push({
-  type: `custom:${c}`,
-  name: "Assist Pipeline Card",
-  description: "Chat with Home Assistant Assist from a dashboard card."
-});
+window.customCards.push(
+  {
+    type: `custom:${c}`,
+    name: "Assist Pipeline Card",
+    description: "Chat with Home Assistant Assist from a dashboard card."
+  },
+  {
+    type: `custom:${d}`,
+    name: "Assist Pipeline Card",
+    description: "Alias for Assist Pipeline Card."
+  }
+);
 export {
-  g as AssistPipelineCard
+  f as AssistPipelineCard
 };
 //# sourceMappingURL=hacs-assist-pipeline-card.js.map

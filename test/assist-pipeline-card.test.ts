@@ -114,6 +114,11 @@ describe("AssistPipelineCard", () => {
     expect(card.getCardSize()).toBe(5);
   });
 
+  it("registers both dashboard element names", () => {
+    expect(customElements.get("assist-pipeline-card")).toBe(AssistPipelineCard);
+    expect(customElements.get("hacs-assist-pipeline-card")).toBeDefined();
+  });
+
   it("sends text through the Assist pipeline websocket and renders the reply", async () => {
     const { card, emitPipelineEvent, unsubscribe, subscribeMessage } =
       await createCard();

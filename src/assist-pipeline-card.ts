@@ -1,4 +1,5 @@
 const CARD_TAG = "assist-pipeline-card";
+const HACS_CARD_TAG = "hacs-assist-pipeline-card";
 const DEFAULT_NAME = "Assist";
 const DEFAULT_ICON = "mdi:comment-processing-outline";
 
@@ -576,6 +577,8 @@ export class AssistPipelineCard extends HTMLElement {
   }
 }
 
+class HacsAssistPipelineCard extends AssistPipelineCard {}
+
 const escapeHtml = (value: string): string =>
   value.replace(/[&<>"']/g, (char) => {
     switch (char) {
@@ -608,9 +611,20 @@ if (!customElements.get(CARD_TAG)) {
   customElements.define(CARD_TAG, AssistPipelineCard);
 }
 
+if (!customElements.get(HACS_CARD_TAG)) {
+  customElements.define(HACS_CARD_TAG, HacsAssistPipelineCard);
+}
+
 window.customCards = window.customCards ?? [];
-window.customCards.push({
-  type: `custom:${CARD_TAG}`,
-  name: "Assist Pipeline Card",
-  description: "Chat with Home Assistant Assist from a dashboard card.",
-});
+window.customCards.push(
+  {
+    type: `custom:${CARD_TAG}`,
+    name: "Assist Pipeline Card",
+    description: "Chat with Home Assistant Assist from a dashboard card.",
+  },
+  {
+    type: `custom:${HACS_CARD_TAG}`,
+    name: "Assist Pipeline Card",
+    description: "Alias for Assist Pipeline Card.",
+  }
+);
