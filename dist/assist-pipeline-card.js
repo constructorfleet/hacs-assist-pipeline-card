@@ -1,4 +1,4 @@
-const c = "assist-pipeline-card", d = "hacs-assist-pipeline-card", u = "Assist", _ = "mdi:comment-processing-outline";
+const c = "assist-pipeline-card", d = "hacs-assist-pipeline-card", m = "0.1.2", u = "Assist", _ = "mdi:comment-processing-outline";
 class f extends HTMLElement {
   constructor() {
     super(...arguments), this._config = {
@@ -262,11 +262,11 @@ class f extends HTMLElement {
   _buttonTemplate() {
     return `
       <div class="button-content">
-        <button class="open-button" type="button" aria-label="${a(
+        <button class="open-button" type="button" aria-label="${r(
       this._config.name
     )}">
-          <ha-icon icon="${a(this._config.icon)}"></ha-icon>
-          <span class="label">${a(this._config.name)}</span>
+          <ha-icon icon="${r(this._config.icon)}"></ha-icon>
+          <span class="label">${r(this._config.name)}</span>
         </button>
       </div>
     `;
@@ -277,9 +277,9 @@ class f extends HTMLElement {
       <ha-card>
         <div class="chat">
           <div class="header">
-            <ha-icon icon="${a(this._config.icon)}"></ha-icon>
-            <div class="title">${a(this._config.name)}</div>
-            <div class="pipeline">${a(
+            <ha-icon icon="${r(this._config.icon)}"></ha-icon>
+            <div class="title">${r(this._config.name)}</div>
+            <div class="pipeline">${r(
       this._loading ? "Loading..." : ((e = this._pipeline) == null ? void 0 : e.name) ?? "No pipeline"
     )}</div>
           </div>
@@ -287,7 +287,7 @@ class f extends HTMLElement {
             ${this._messages.map(
       (i) => `
                   <div class="message ${i.who}${i.error ? " error" : ""}">
-                    ${a(i.text)}
+                    ${r(i.text)}
                   </div>
                 `
     ).join("")}
@@ -296,7 +296,7 @@ class f extends HTMLElement {
             <input
               type="text"
               autocomplete="off"
-              placeholder="${a(this._config.placeholder)}"
+              placeholder="${r(this._config.placeholder)}"
               ${this._processing || this._loading || !this._pipeline ? "disabled" : ""}
             />
             <button
@@ -372,9 +372,9 @@ class f extends HTMLElement {
     }, this.dispatchEvent(e);
   }
 }
-class m extends f {
+class x extends f {
 }
-const a = (r) => r.replace(/[&<>"']/g, (e) => {
+const r = (a) => a.replace(/[&<>"']/g, (e) => {
   switch (e) {
     case "&":
       return "&amp;";
@@ -389,9 +389,9 @@ const a = (r) => r.replace(/[&<>"']/g, (e) => {
     default:
       return e;
   }
-}), g = (r) => r instanceof Error ? r.message : typeof r == "string" ? r : "unknown error";
+}), g = (a) => a instanceof Error ? a.message : typeof a == "string" ? a : "unknown error";
 customElements.get(c) || customElements.define(c, f);
-customElements.get(d) || customElements.define(d, m);
+customElements.get(d) || customElements.define(d, x);
 window.customCards = window.customCards ?? [];
 window.customCards.push(
   {
@@ -403,6 +403,13 @@ window.customCards.push(
     type: `custom:${d}`,
     name: "Assist Pipeline Card",
     description: "Alias for Assist Pipeline Card."
+  }
+);
+console.info(
+  `%cAssist Pipeline Card v${m} loaded`,
+  "color: #03a9f4; font-weight: 700;",
+  {
+    elements: [`custom:${c}`, `custom:${d}`]
   }
 );
 export {

@@ -1,5 +1,6 @@
 const CARD_TAG = "assist-pipeline-card";
 const HACS_CARD_TAG = "hacs-assist-pipeline-card";
+const CARD_VERSION = "0.1.2";
 const DEFAULT_NAME = "Assist";
 const DEFAULT_ICON = "mdi:comment-processing-outline";
 
@@ -626,5 +627,13 @@ window.customCards.push(
     type: `custom:${HACS_CARD_TAG}`,
     name: "Assist Pipeline Card",
     description: "Alias for Assist Pipeline Card.",
+  }
+);
+
+console.info(
+  `%cAssist Pipeline Card v${CARD_VERSION} loaded`,
+  "color: #03a9f4; font-weight: 700;",
+  {
+    elements: [`custom:${CARD_TAG}`, `custom:${HACS_CARD_TAG}`],
   }
 );

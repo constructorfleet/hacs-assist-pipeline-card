@@ -119,6 +119,15 @@ describe("AssistPipelineCard", () => {
     expect(customElements.get("hacs-assist-pipeline-card")).toBeDefined();
   });
 
+  it("registers custom card picker metadata for both names", () => {
+    expect(window.customCards).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: "custom:assist-pipeline-card" }),
+        expect.objectContaining({ type: "custom:hacs-assist-pipeline-card" }),
+      ])
+    );
+  });
+
   it("sends text through the Assist pipeline websocket and renders the reply", async () => {
     const { card, emitPipelineEvent, unsubscribe, subscribeMessage } =
       await createCard();

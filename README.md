@@ -41,6 +41,15 @@ type: module
 
 Then clear the frontend cache, hard refresh, or restart the app that embeds the dashboard.
 
+You can verify loading from the browser console:
+
+```js
+await import("/hacsfiles/hacs-assist-pipeline-card/hacs-assist-pipeline-card.js?v=0.1.2");
+customElements.get("assist-pipeline-card");
+```
+
+The import should print `Assist Pipeline Card v0.1.2 loaded`. If it does not, Home Assistant is not serving the installed resource at that URL.
+
 ## Options
 
 | Option | Type | Default | Description |

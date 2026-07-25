@@ -1,6 +1,6 @@
 {
   "name": "assist-pipeline-card",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A Home Assistant custom card that opens the Assist pipeline text dialog.",
   "type": "module",
   "main": "dist/hacs-assist-pipeline-card.js",
