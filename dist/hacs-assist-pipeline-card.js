@@ -1,14 +1,16 @@
-const c = "assist-pipeline-card", d = "hacs-assist-pipeline-card", m = "0.1.4", _ = "Assist", u = "mdi:comment-processing-outline";
-class f extends HTMLElement {
+const c = "assist-pipeline-card", _ = "hacs-assist-pipeline-card", v = "0.1.5", u = "Assist", g = "mdi:comment-processing-outline";
+class b extends HTMLElement {
   constructor() {
     super(...arguments), this._config = {
-      name: _,
-      icon: u,
+      name: u,
+      icon: g,
       pipeline_id: "last_used",
       start_listening: !1,
       appearance: "chat",
-      placeholder: "Ask Assist"
-    }, this._loading = !1, this._processing = !1, this._conversationId = null, this._messages = [
+      placeholder: "Ask Assist",
+      show_pipeline_selector: !0,
+      input_mode: "text"
+    }, this._pipelines = [], this._loading = !1, this._processing = !1, this._conversationId = null, this._messages = [
       {
         who: "hass",
         text: "How can I assist?"
@@ -18,14 +20,18 @@ class f extends HTMLElement {
   setConfig(e) {
     if (e.appearance && !["card", "button", "chat"].includes(e.appearance))
       throw new Error("appearance must be 'chat', 'card', or 'button'");
+    if (e.input_mode && !["text", "audio"].includes(e.input_mode))
+      throw new Error("input_mode must be 'text' or 'audio'");
     const i = this._config;
     this._config = {
-      name: e.name ?? _,
-      icon: e.icon ?? u,
+      name: e.name ?? u,
+      icon: e.icon ?? g,
       pipeline_id: e.pipeline_id ?? "last_used",
       start_listening: e.start_listening ?? !1,
       appearance: e.appearance ?? "chat",
-      placeholder: e.placeholder ?? "Ask Assist"
+      placeholder: e.placeholder ?? "Ask Assist",
+      show_pipeline_selector: e.show_pipeline_selector ?? !0,
+      input_mode: e.input_mode ?? "text"
     }, (i.appearance !== this._config.appearance || i.pipeline_id !== this._config.pipeline_id) && (this._pipeline = void 0, this._pipelineLoadKey = void 0), this._render(), this._ensurePipelineLoaded();
   }
   set hass(e) {
@@ -52,6 +58,9 @@ class f extends HTMLElement {
       appearance: "chat"
     };
   }
+  static getConfigElement() {
+    return document.createElement("assist-pipeline-card-editor");
+  }
   _ensurePipelineLoaded() {
     if (!this.hass || this._config.appearance !== "chat")
       return;
@@ -65,7 +74,7 @@ class f extends HTMLElement {
         const i = await this.hass.callWS({
           type: "assist_pipeline/pipeline/list"
         });
-        this._preferredPipeline = i.preferred_pipeline ?? void 0;
+        this._pipelines = i.pipelines, this._preferredPipeline = i.preferred_pipeline ?? void 0;
         const s = this._resolvePipelineId(i.pipelines), t = await this.hass.callWS({
           type: "assist_pipeline/pipeline/get",
           pipeline_id: s
@@ -77,7 +86,7 @@ class f extends HTMLElement {
         this._messages = [
           {
             who: "hass",
-            text: `Could not load Assist pipeline: ${g(i)}`,
+            text: `Could not load Assist pipeline: ${x(i)}`,
             error: !0
           }
         ];
@@ -93,12 +102,12 @@ class f extends HTMLElement {
     if (this._config.pipeline_id === "last_used")
       return this._lastUsedPipeline ?? this._preferredPipeline ?? ((s = e[0]) == null ? void 0 : s.id);
     const i = e.find(
-      (a) => a.id === this._config.pipeline_id
+      (p) => p.id === this._config.pipeline_id
     );
     return (i == null ? void 0 : i.id) ?? this._preferredPipeline ?? ((t = e[0]) == null ? void 0 : t.id);
   }
   _render() {
-    var a, n;
+    var p, n, d, f;
     const e = this.shadowRoot ?? this.attachShadow({ mode: "open" }), i = this._config.appearance === "button", s = ["button", "card"].includes(this._config.appearance);
     e.innerHTML = `
       <style>
@@ -190,11 +199,29 @@ class f extends HTMLElement {
         }
 
         .pipeline {
+          align-items: center;
           color: var(--secondary-text-color);
+          display: flex;
           font-size: 12px;
+          justify-content: flex-end;
+          min-width: 80px;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+        }
+
+        select.pipeline-select {
+          appearance: none;
+          background: transparent;
+          border: 0;
+          color: var(--secondary-text-color);
+          font: inherit;
+          max-width: 120px;
+          min-width: 0;
+          overflow: hidden;
+          padding: 0;
+          text-align: right;
+          text-overflow: ellipsis;
         }
 
         .messages {
@@ -211,10 +238,12 @@ class f extends HTMLElement {
           border-radius: 12px;
           box-sizing: border-box;
           line-height: 1.35;
-          max-width: 88%;
+          max-width: min(88%, 560px);
           overflow-wrap: anywhere;
           padding: 8px 10px;
+          text-align: left;
           white-space: pre-wrap;
+          width: fit-content;
         }
 
         .message.user {
@@ -244,6 +273,11 @@ class f extends HTMLElement {
           padding: 10px 12px;
         }
 
+        .voice-row {
+          border-top: 1px solid var(--divider-color);
+          padding: 10px 12px;
+        }
+
         input {
           background: var(--card-background-color);
           border: 1px solid var(--divider-color);
@@ -256,14 +290,31 @@ class f extends HTMLElement {
           min-width: 0;
           padding: 0 12px;
         }
+
+        .voice-button {
+          background: var(--primary-color);
+          border: 0;
+          border-radius: 8px;
+          color: var(--text-primary-color);
+          cursor: pointer;
+          font: inherit;
+          min-height: 44px;
+          width: 100%;
+        }
       </style>
       ${s ? i ? this._buttonTemplate() : `<ha-card>${this._buttonTemplate()}</ha-card>` : this._chatTemplate()}
-    `, (a = e.querySelector(".open-button")) == null || a.addEventListener("click", () => {
+    `, (p = e.querySelector(".open-button")) == null || p.addEventListener("click", () => {
       this._openAssistDialog();
-    }), (n = e.querySelector("form")) == null || n.addEventListener("submit", (p) => {
-      p.preventDefault();
-      const l = e.querySelector("input"), h = l == null ? void 0 : l.value.trim();
-      h && (l.value = "", this._sendMessage(h));
+    }), (n = e.querySelector("form")) == null || n.addEventListener("submit", (h) => {
+      h.preventDefault();
+      const l = e.querySelector("input"), m = l == null ? void 0 : l.value.trim();
+      m && (l.value = "", this._sendMessage(m));
+    }), (d = e.querySelector(".voice-button")) == null || d.addEventListener("click", () => this._openAssistDialog()), (f = e.querySelector(".pipeline-select")) == null || f.addEventListener("change", (h) => {
+      const l = h.target.value;
+      this._config = {
+        ...this._config,
+        pipeline_id: l
+      }, this._pipeline = void 0, this._pipelineLoadKey = void 0, this._ensurePipelineLoaded(), this._render();
     });
     const t = e.querySelector(".messages");
     t && (t.scrollTop = t.scrollHeight);
@@ -281,26 +332,13 @@ class f extends HTMLElement {
     `;
   }
   _chatTemplate() {
-    var e;
-    return `
-      <ha-card>
-        <div class="chat">
-          <div class="header">
-            <ha-icon icon="${o(this._config.icon)}"></ha-icon>
-            <div class="title">${o(this._config.name)}</div>
-            <div class="pipeline">${o(
-      this._loading ? "Loading..." : ((e = this._pipeline) == null ? void 0 : e.name) ?? "No pipeline"
-    )}</div>
+    const e = this._config.input_mode === "audio" ? `
+          <div class="voice-row">
+            <button class="voice-button" type="button">
+              Start Assist
+            </button>
           </div>
-          <div class="messages">
-            ${this._messages.map(
-      (i) => `
-                  <div class="message ${i.who}${i.error ? " error" : ""}">
-                    ${o(i.text)}
-                  </div>
-                `
-    ).join("")}
-          </div>
+        ` : `
           <form>
             <input
               type="text"
@@ -317,8 +355,46 @@ class f extends HTMLElement {
               Send
             </button>
           </form>
+        `;
+    return `
+      <ha-card>
+        <div class="chat">
+          <div class="header">
+            <ha-icon icon="${o(this._config.icon)}"></ha-icon>
+            <div class="title">${o(this._config.name)}</div>
+            <div class="pipeline">${this._pipelineControlTemplate()}</div>
+          </div>
+          <div class="messages">
+            ${this._messages.map(
+      (i) => `
+                  <div class="message ${i.who}${i.error ? " error" : ""}">
+                    ${o(i.text)}
+                  </div>
+                `
+    ).join("")}
+          </div>
+          ${e}
         </div>
       </ha-card>
+    `;
+  }
+  _pipelineControlTemplate() {
+    var s;
+    if (!this._config.show_pipeline_selector)
+      return o(
+        this._loading ? "Loading..." : ((s = this._pipeline) == null ? void 0 : s.name) ?? "No pipeline"
+      );
+    const e = this._config.pipeline_id;
+    return `
+      <select class="pipeline-select" aria-label="Assist pipeline">
+        ${[
+      r("last_used", "Last used", e),
+      r("preferred", "Preferred", e),
+      ...this._pipelines.map(
+        (t) => r(t.id, t.name, e)
+      )
+    ].join("")}
+      </select>
     `;
   }
   async _sendMessage(e) {
@@ -345,11 +421,11 @@ class f extends HTMLElement {
         }
       );
     } catch (t) {
-      i.text = `Error starting Assist: ${g(t)}`, i.error = !0, i.pending = !1, this._processing = !1, this._render();
+      i.text = `Error starting Assist: ${x(t)}`, i.error = !0, i.pending = !1, this._processing = !1, this._render();
     }
   }
   _processPipelineEvent(e, i, s) {
-    var t, a;
+    var t, p;
     if (e.type === "intent-progress") {
       const n = e.data.chat_log_delta;
       (n == null ? void 0 : n.role) === "assistant" && n.content && (i.text = i.pending ? n.content : `${i.text}${n.content}`, i.pending = !1, this._render());
@@ -358,8 +434,8 @@ class f extends HTMLElement {
     if (e.type === "intent-end") {
       const n = e.data.intent_output;
       this._conversationId = n.conversation_id;
-      const p = (a = (t = n.response.speech) == null ? void 0 : t.plain) == null ? void 0 : a.speech;
-      p ? i.text = p : i.pending && (i.text = ""), i.error = n.response.response_type === "error", i.pending = !1, this._processing = !1, s(), this._render();
+      const d = (p = (t = n.response.speech) == null ? void 0 : t.plain) == null ? void 0 : p.speech;
+      d ? i.text = d : i.pending && (i.text = ""), i.error = n.response.response_type === "error", i.pending = !1, this._processing = !1, s(), this._render();
       return;
     }
     e.type === "error" && (i.text = e.data.message, i.error = !0, i.pending = !1, this._processing = !1, s(), this._render());
@@ -381,9 +457,185 @@ class f extends HTMLElement {
     }, this.dispatchEvent(e);
   }
 }
-class x extends f {
+class w extends b {
 }
-const o = (r) => r.replace(/[&<>"']/g, (e) => {
+class y extends HTMLElement {
+  constructor() {
+    super(...arguments), this._config = {}, this._pipelines = [], this._loadingPipelines = !1;
+  }
+  setConfig(e) {
+    this._config = {
+      ...e,
+      appearance: e.appearance ?? "chat",
+      pipeline_id: e.pipeline_id ?? "last_used",
+      input_mode: e.input_mode ?? "text",
+      show_pipeline_selector: e.show_pipeline_selector ?? !0
+    }, this._render();
+  }
+  set hass(e) {
+    this._hass = e, this._render(), this._loadPipelines();
+  }
+  get hass() {
+    return this._hass;
+  }
+  async _loadPipelines() {
+    if (!(!this.hass || this._loadingPipelines || this._pipelines.length)) {
+      this._loadingPipelines = !0, this._render();
+      try {
+        const e = await this.hass.callWS({
+          type: "assist_pipeline/pipeline/list"
+        });
+        this._pipelines = e.pipelines, this._preferredPipeline = e.preferred_pipeline ?? void 0;
+      } finally {
+        this._loadingPipelines = !1, this._render();
+      }
+    }
+  }
+  _render() {
+    const e = this.shadowRoot ?? this.attachShadow({ mode: "open" }), i = {
+      name: this._config.name ?? u,
+      icon: this._config.icon ?? g,
+      appearance: this._config.appearance ?? "chat",
+      pipeline_id: this._config.pipeline_id ?? "last_used",
+      input_mode: this._config.input_mode ?? "text",
+      placeholder: this._config.placeholder ?? "Ask Assist",
+      show_pipeline_selector: this._config.show_pipeline_selector ?? !0,
+      start_listening: this._config.start_listening ?? !1
+    }, s = [
+      r("last_used", "Last used", i.pipeline_id),
+      r(
+        "preferred",
+        this._preferredPipeline ? "Preferred pipeline" : "Preferred",
+        i.pipeline_id
+      ),
+      ...this._pipelines.map(
+        (t) => r(t.id, t.name, i.pipeline_id)
+      )
+    ].join("");
+    e.innerHTML = `
+      <style>
+        :host {
+          display: block;
+        }
+
+        .editor {
+          display: grid;
+          gap: 14px;
+        }
+
+        label {
+          color: var(--secondary-text-color);
+          display: grid;
+          font-size: 12px;
+          gap: 6px;
+        }
+
+        input,
+        select {
+          background: var(--card-background-color);
+          border: 1px solid var(--divider-color);
+          border-radius: 6px;
+          box-sizing: border-box;
+          color: var(--primary-text-color);
+          font: inherit;
+          min-height: 40px;
+          padding: 0 10px;
+          width: 100%;
+        }
+
+        .check {
+          align-items: center;
+          color: var(--primary-text-color);
+          display: flex;
+          font-size: 14px;
+          gap: 8px;
+        }
+
+        .check input {
+          min-height: auto;
+          width: auto;
+        }
+      </style>
+      <div class="editor">
+        <label>
+          Name
+          <input data-field="name" type="text" value="${o(i.name)}" />
+        </label>
+        <label>
+          Icon
+          <input data-field="icon" type="text" value="${o(i.icon)}" />
+        </label>
+        <label>
+          Appearance
+          <select data-field="appearance">
+            ${r("chat", "Chat", i.appearance)}
+            ${r("card", "Dialog opener card", i.appearance)}
+            ${r("button", "Dialog opener button", i.appearance)}
+          </select>
+        </label>
+        <label>
+          Input mode
+          <select data-field="input_mode">
+            ${r("text", "Text chat", i.input_mode)}
+            ${r("audio", "Audio dialog button", i.input_mode)}
+          </select>
+        </label>
+        <label>
+          Default pipeline
+          <select data-field="pipeline_id" ${this._loadingPipelines ? "disabled" : ""}>
+            ${s}
+          </select>
+        </label>
+        <label>
+          Placeholder
+          <input
+            data-field="placeholder"
+            type="text"
+            value="${o(i.placeholder)}"
+            ${i.input_mode === "audio" ? "disabled" : ""}
+          />
+        </label>
+        <label class="check">
+          <input
+            data-field="show_pipeline_selector"
+            type="checkbox"
+            ${i.show_pipeline_selector ? "checked" : ""}
+          />
+          Show pipeline selector on the card
+        </label>
+        <label class="check">
+          <input
+            data-field="start_listening"
+            type="checkbox"
+            ${i.start_listening ? "checked" : ""}
+          />
+          Start listening when opening the native Assist dialog
+        </label>
+      </div>
+    `, e.querySelectorAll("input, select").forEach((t) => {
+      t.addEventListener("change", () => this._valueChanged(t)), t instanceof HTMLInputElement && t.type === "text" && t.addEventListener("input", () => this._valueChanged(t));
+    });
+  }
+  _valueChanged(e) {
+    const i = e.dataset.field;
+    if (!i)
+      return;
+    const s = e instanceof HTMLInputElement && e.type === "checkbox" ? e.checked : e.value, t = {
+      ...this._config,
+      [i]: s
+    };
+    this._config = t, this.dispatchEvent(
+      new CustomEvent("config-changed", {
+        bubbles: !0,
+        composed: !0,
+        detail: {
+          config: t
+        }
+      })
+    ), this._render();
+  }
+}
+const o = (a) => a.replace(/[&<>"']/g, (e) => {
   switch (e) {
     case "&":
       return "&amp;";
@@ -398,9 +650,14 @@ const o = (r) => r.replace(/[&<>"']/g, (e) => {
     default:
       return e;
   }
-}), g = (r) => r instanceof Error ? r.message : typeof r == "string" ? r : "unknown error";
-customElements.get(c) || customElements.define(c, f);
-customElements.get(d) || customElements.define(d, x);
+}), x = (a) => a instanceof Error ? a.message : typeof a == "string" ? a : "unknown error", r = (a, e, i) => `
+  <option value="${o(a)}" ${a === i ? "selected" : ""}>
+    ${o(e)}
+  </option>
+`;
+customElements.get(c) || customElements.define(c, b);
+customElements.get(_) || customElements.define(_, w);
+customElements.get("assist-pipeline-card-editor") || customElements.define("assist-pipeline-card-editor", y);
 window.customCards = window.customCards ?? [];
 window.customCards.push({
   type: c,
@@ -408,13 +665,13 @@ window.customCards.push({
   description: "Chat with Home Assistant Assist from a dashboard card."
 });
 console.info(
-  `%cAssist Pipeline Card v${m} loaded`,
+  `%cAssist Pipeline Card v${v} loaded`,
   "color: #03a9f4; font-weight: 700;",
   {
-    elements: [`custom:${c}`, `custom:${d}`]
+    elements: [`custom:${c}`, `custom:${_}`]
   }
 );
 export {
-  f as AssistPipelineCard
+  b as AssistPipelineCard
 };
 //# sourceMappingURL=hacs-assist-pipeline-card.js.map

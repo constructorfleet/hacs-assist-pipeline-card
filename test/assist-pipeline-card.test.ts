@@ -114,6 +114,15 @@ describe("AssistPipelineCard", () => {
     expect(card.getCardSize()).toBe(5);
   });
 
+  it("left-aligns assistant message bubbles", async () => {
+    const { card } = await createCard();
+
+    const styles = card.shadowRoot?.querySelector("style")?.textContent;
+
+    expect(styles).toContain("text-align: left");
+    expect(styles).toContain("width: fit-content");
+  });
+
   it("does not reload the pipeline on routine hass updates", async () => {
     const { card, hass, callWS } = await createCard();
     const input = card.shadowRoot?.querySelector("input");
@@ -148,6 +157,52 @@ describe("AssistPipelineCard", () => {
         expect.objectContaining({ type: "custom:hacs-assist-pipeline-card" }),
       ])
     );
+  });
+
+  it("provides a visual editor with pipeline and mode controls", async () => {
+    const editor = AssistPipelineCard.getConfigElement() as HTMLElement & {
+      hass: TestHass;
+      setConfig(config: AssistPipelineCardConfig): void;
+    };
+    const harness = createHass();
+    document.body.appendChild(editor);
+    editor.setConfig({
+      name: "Assist",
+      pipeline_id: "last_used",
+      show_pipeline_selector: true,
+      input_mode: "text",
+    });
+    editor.hass = harness.hass;
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(editor.shadowRoot?.querySelector('[data-field="pipeline_id"]')).not.toBeNull();
+    expect(editor.shadowRoot?.querySelector('[data-field="input_mode"]')).not.toBeNull();
+    expect(
+      editor.shadowRoot?.querySelector('[data-field="show_pipeline_selector"]')
+    ).not.toBeNull();
+    expect(editor.shadowRoot?.textContent).toContain("Preferred");
+  });
+
+  it("emits config changes from the visual editor", () => {
+    const editor = AssistPipelineCard.getConfigElement() as HTMLElement & {
+      setConfig(config: AssistPipelineCardConfig): void;
+    };
+    document.body.appendChild(editor);
+    editor.setConfig({ name: "Assist" });
+    let config: AssistPipelineCardConfig | undefined;
+    editor.addEventListener("config-changed", (event) => {
+      config = (event as CustomEvent<{ config: AssistPipelineCardConfig }>).detail
+        .config;
+    });
+
+    const input = editor.shadowRoot?.querySelector(
+      '[data-field="name"]'
+    ) as HTMLInputElement;
+    input.value = "Kitchen Assist";
+    input.dispatchEvent(new Event("input"));
+
+    expect(config?.name).toBe("Kitchen Assist");
   });
 
   it("sends text through the Assist pipeline websocket and renders the reply", async () => {
@@ -230,5 +285,13 @@ describe("AssistPipelineCard", () => {
     expect(() =>
       card.setConfig({ appearance: "giant" as AssistPipelineCardConfig["appearance"] })
     ).toThrow("appearance must be 'chat', 'card', or 'button'");
+  });
+
+  it("rejects unknown input modes", () => {
+    const card = new AssistPipelineCard();
+
+    expect(() =>
+      card.setConfig({ input_mode: "telepathy" as AssistPipelineCardConfig["input_mode"] })
+    ).toThrow("input_mode must be 'text' or 'audio'");
   });
 });

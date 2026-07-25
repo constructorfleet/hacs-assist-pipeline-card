@@ -1,10 +1,11 @@
 const CARD_TAG = "assist-pipeline-card";
 const HACS_CARD_TAG = "hacs-assist-pipeline-card";
-const CARD_VERSION = "0.1.4";
+const CARD_VERSION = "0.1.5";
 const DEFAULT_NAME = "Assist";
 const DEFAULT_ICON = "mdi:comment-processing-outline";
 
 type Appearance = "card" | "button" | "chat";
+type InputMode = "text" | "audio";
 type PipelineId = "last_used" | "preferred" | string;
 
 export interface AssistPipelineCardConfig {
@@ -15,6 +16,8 @@ export interface AssistPipelineCardConfig {
   start_listening?: boolean;
   appearance?: Appearance;
   placeholder?: string;
+  show_pipeline_selector?: boolean;
+  input_mode?: InputMode;
 }
 
 interface AssistPipeline {
@@ -94,9 +97,12 @@ export class AssistPipelineCard extends HTMLElement {
     start_listening: false,
     appearance: "chat",
     placeholder: "Ask Assist",
+    show_pipeline_selector: true,
+    input_mode: "text",
   };
 
   private _pipeline?: AssistPipeline;
+  private _pipelines: AssistPipeline[] = [];
   private _preferredPipeline?: string;
   private _lastUsedPipeline?: string;
   private _pipelineLoadKey?: string;
@@ -117,6 +123,9 @@ export class AssistPipelineCard extends HTMLElement {
     ) {
       throw new Error("appearance must be 'chat', 'card', or 'button'");
     }
+    if (config.input_mode && !["text", "audio"].includes(config.input_mode)) {
+      throw new Error("input_mode must be 'text' or 'audio'");
+    }
 
     const previousConfig = this._config;
     this._config = {
@@ -126,6 +135,8 @@ export class AssistPipelineCard extends HTMLElement {
       start_listening: config.start_listening ?? false,
       appearance: config.appearance ?? "chat",
       placeholder: config.placeholder ?? "Ask Assist",
+      show_pipeline_selector: config.show_pipeline_selector ?? true,
+      input_mode: config.input_mode ?? "text",
     };
 
     if (
@@ -177,6 +188,10 @@ export class AssistPipelineCard extends HTMLElement {
     };
   }
 
+  public static getConfigElement(): HTMLElement {
+    return document.createElement("assist-pipeline-card-editor");
+  }
+
   private _ensurePipelineLoaded(): void {
     if (!this.hass || this._config.appearance !== "chat") {
       return;
@@ -206,6 +221,7 @@ export class AssistPipelineCard extends HTMLElement {
       }>({
         type: "assist_pipeline/pipeline/list",
       });
+      this._pipelines = list.pipelines;
       this._preferredPipeline = list.preferred_pipeline ?? undefined;
       const pipelineId = this._resolvePipelineId(list.pipelines);
       const pipeline = await this.hass.callWS<AssistPipeline>({
@@ -341,11 +357,29 @@ export class AssistPipelineCard extends HTMLElement {
         }
 
         .pipeline {
+          align-items: center;
           color: var(--secondary-text-color);
+          display: flex;
           font-size: 12px;
+          justify-content: flex-end;
+          min-width: 80px;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+        }
+
+        select.pipeline-select {
+          appearance: none;
+          background: transparent;
+          border: 0;
+          color: var(--secondary-text-color);
+          font: inherit;
+          max-width: 120px;
+          min-width: 0;
+          overflow: hidden;
+          padding: 0;
+          text-align: right;
+          text-overflow: ellipsis;
         }
 
         .messages {
@@ -362,10 +396,12 @@ export class AssistPipelineCard extends HTMLElement {
           border-radius: 12px;
           box-sizing: border-box;
           line-height: 1.35;
-          max-width: 88%;
+          max-width: min(88%, 560px);
           overflow-wrap: anywhere;
           padding: 8px 10px;
+          text-align: left;
           white-space: pre-wrap;
+          width: fit-content;
         }
 
         .message.user {
@@ -395,6 +431,11 @@ export class AssistPipelineCard extends HTMLElement {
           padding: 10px 12px;
         }
 
+        .voice-row {
+          border-top: 1px solid var(--divider-color);
+          padding: 10px 12px;
+        }
+
         input {
           background: var(--card-background-color);
           border: 1px solid var(--divider-color);
@@ -406,6 +447,17 @@ export class AssistPipelineCard extends HTMLElement {
           min-height: 44px;
           min-width: 0;
           padding: 0 12px;
+        }
+
+        .voice-button {
+          background: var(--primary-color);
+          border: 0;
+          border-radius: 8px;
+          color: var(--text-primary-color);
+          cursor: pointer;
+          font: inherit;
+          min-height: 44px;
+          width: 100%;
         }
       </style>
       ${
@@ -432,6 +484,24 @@ export class AssistPipelineCard extends HTMLElement {
       void this._sendMessage(text);
     });
 
+    root
+      .querySelector(".voice-button")
+      ?.addEventListener("click", () => this._openAssistDialog());
+
+    root
+      .querySelector(".pipeline-select")
+      ?.addEventListener("change", (event) => {
+        const pipelineId = (event.target as HTMLSelectElement).value;
+        this._config = {
+          ...this._config,
+          pipeline_id: pipelineId,
+        };
+        this._pipeline = undefined;
+        this._pipelineLoadKey = undefined;
+        this._ensurePipelineLoaded();
+        this._render();
+      });
+
     const messages = root.querySelector(".messages");
     if (messages) {
       messages.scrollTop = messages.scrollHeight;
@@ -452,27 +522,16 @@ export class AssistPipelineCard extends HTMLElement {
   }
 
   private _chatTemplate(): string {
-    return `
-      <ha-card>
-        <div class="chat">
-          <div class="header">
-            <ha-icon icon="${escapeHtml(this._config.icon)}"></ha-icon>
-            <div class="title">${escapeHtml(this._config.name)}</div>
-            <div class="pipeline">${escapeHtml(
-              this._loading ? "Loading..." : this._pipeline?.name ?? "No pipeline"
-            )}</div>
+    const input =
+      this._config.input_mode === "audio"
+        ? `
+          <div class="voice-row">
+            <button class="voice-button" type="button">
+              Start Assist
+            </button>
           </div>
-          <div class="messages">
-            ${this._messages
-              .map(
-                (message) => `
-                  <div class="message ${message.who}${message.error ? " error" : ""}">
-                    ${escapeHtml(message.text)}
-                  </div>
-                `
-              )
-              .join("")}
-          </div>
+        `
+        : `
           <form>
             <input
               type="text"
@@ -489,8 +548,53 @@ export class AssistPipelineCard extends HTMLElement {
               Send
             </button>
           </form>
+        `;
+
+    return `
+      <ha-card>
+        <div class="chat">
+          <div class="header">
+            <ha-icon icon="${escapeHtml(this._config.icon)}"></ha-icon>
+            <div class="title">${escapeHtml(this._config.name)}</div>
+            <div class="pipeline">${this._pipelineControlTemplate()}</div>
+          </div>
+          <div class="messages">
+            ${this._messages
+              .map(
+                (message) => `
+                  <div class="message ${message.who}${message.error ? " error" : ""}">
+                    ${escapeHtml(message.text)}
+                  </div>
+                `
+              )
+              .join("")}
+          </div>
+          ${input}
         </div>
       </ha-card>
+    `;
+  }
+
+  private _pipelineControlTemplate(): string {
+    if (!this._config.show_pipeline_selector) {
+      return escapeHtml(
+        this._loading ? "Loading..." : this._pipeline?.name ?? "No pipeline"
+      );
+    }
+
+    const selected = this._config.pipeline_id;
+    const options = [
+      optionTemplate("last_used", "Last used", selected),
+      optionTemplate("preferred", "Preferred", selected),
+      ...this._pipelines.map((pipeline) =>
+        optionTemplate(pipeline.id, pipeline.name, selected)
+      ),
+    ].join("");
+
+    return `
+      <select class="pipeline-select" aria-label="Assist pipeline">
+        ${options}
+      </select>
     `;
   }
 
@@ -608,6 +712,222 @@ export class AssistPipelineCard extends HTMLElement {
 
 class HacsAssistPipelineCard extends AssistPipelineCard {}
 
+class AssistPipelineCardEditor extends HTMLElement {
+  private _config: AssistPipelineCardConfig = {};
+  private _hass?: HomeAssistantLike;
+  private _pipelines: AssistPipeline[] = [];
+  private _preferredPipeline?: string;
+  private _loadingPipelines = false;
+
+  public setConfig(config: AssistPipelineCardConfig): void {
+    this._config = {
+      ...config,
+      appearance: config.appearance ?? "chat",
+      pipeline_id: config.pipeline_id ?? "last_used",
+      input_mode: config.input_mode ?? "text",
+      show_pipeline_selector: config.show_pipeline_selector ?? true,
+    };
+    this._render();
+  }
+
+  public set hass(value: HomeAssistantLike | undefined) {
+    this._hass = value;
+    this._render();
+    void this._loadPipelines();
+  }
+
+  public get hass(): HomeAssistantLike | undefined {
+    return this._hass;
+  }
+
+  private async _loadPipelines(): Promise<void> {
+    if (!this.hass || this._loadingPipelines || this._pipelines.length) {
+      return;
+    }
+
+    this._loadingPipelines = true;
+    this._render();
+    try {
+      const list = await this.hass.callWS<{
+        pipelines: AssistPipeline[];
+        preferred_pipeline: string | null;
+      }>({
+        type: "assist_pipeline/pipeline/list",
+      });
+      this._pipelines = list.pipelines;
+      this._preferredPipeline = list.preferred_pipeline ?? undefined;
+    } finally {
+      this._loadingPipelines = false;
+      this._render();
+    }
+  }
+
+  private _render(): void {
+    const root = this.shadowRoot ?? this.attachShadow({ mode: "open" });
+    const config = {
+      name: this._config.name ?? DEFAULT_NAME,
+      icon: this._config.icon ?? DEFAULT_ICON,
+      appearance: this._config.appearance ?? "chat",
+      pipeline_id: this._config.pipeline_id ?? "last_used",
+      input_mode: this._config.input_mode ?? "text",
+      placeholder: this._config.placeholder ?? "Ask Assist",
+      show_pipeline_selector: this._config.show_pipeline_selector ?? true,
+      start_listening: this._config.start_listening ?? false,
+    };
+    const pipelineOptions = [
+      optionTemplate("last_used", "Last used", config.pipeline_id),
+      optionTemplate(
+        "preferred",
+        this._preferredPipeline ? "Preferred pipeline" : "Preferred",
+        config.pipeline_id
+      ),
+      ...this._pipelines.map((pipeline) =>
+        optionTemplate(pipeline.id, pipeline.name, config.pipeline_id)
+      ),
+    ].join("");
+
+    root.innerHTML = `
+      <style>
+        :host {
+          display: block;
+        }
+
+        .editor {
+          display: grid;
+          gap: 14px;
+        }
+
+        label {
+          color: var(--secondary-text-color);
+          display: grid;
+          font-size: 12px;
+          gap: 6px;
+        }
+
+        input,
+        select {
+          background: var(--card-background-color);
+          border: 1px solid var(--divider-color);
+          border-radius: 6px;
+          box-sizing: border-box;
+          color: var(--primary-text-color);
+          font: inherit;
+          min-height: 40px;
+          padding: 0 10px;
+          width: 100%;
+        }
+
+        .check {
+          align-items: center;
+          color: var(--primary-text-color);
+          display: flex;
+          font-size: 14px;
+          gap: 8px;
+        }
+
+        .check input {
+          min-height: auto;
+          width: auto;
+        }
+      </style>
+      <div class="editor">
+        <label>
+          Name
+          <input data-field="name" type="text" value="${escapeHtml(config.name)}" />
+        </label>
+        <label>
+          Icon
+          <input data-field="icon" type="text" value="${escapeHtml(config.icon)}" />
+        </label>
+        <label>
+          Appearance
+          <select data-field="appearance">
+            ${optionTemplate("chat", "Chat", config.appearance)}
+            ${optionTemplate("card", "Dialog opener card", config.appearance)}
+            ${optionTemplate("button", "Dialog opener button", config.appearance)}
+          </select>
+        </label>
+        <label>
+          Input mode
+          <select data-field="input_mode">
+            ${optionTemplate("text", "Text chat", config.input_mode)}
+            ${optionTemplate("audio", "Audio dialog button", config.input_mode)}
+          </select>
+        </label>
+        <label>
+          Default pipeline
+          <select data-field="pipeline_id" ${this._loadingPipelines ? "disabled" : ""}>
+            ${pipelineOptions}
+          </select>
+        </label>
+        <label>
+          Placeholder
+          <input
+            data-field="placeholder"
+            type="text"
+            value="${escapeHtml(config.placeholder)}"
+            ${config.input_mode === "audio" ? "disabled" : ""}
+          />
+        </label>
+        <label class="check">
+          <input
+            data-field="show_pipeline_selector"
+            type="checkbox"
+            ${config.show_pipeline_selector ? "checked" : ""}
+          />
+          Show pipeline selector on the card
+        </label>
+        <label class="check">
+          <input
+            data-field="start_listening"
+            type="checkbox"
+            ${config.start_listening ? "checked" : ""}
+          />
+          Start listening when opening the native Assist dialog
+        </label>
+      </div>
+    `;
+
+    root.querySelectorAll("input, select").forEach((field) => {
+      field.addEventListener("change", () => this._valueChanged(field));
+      if (field instanceof HTMLInputElement && field.type === "text") {
+        field.addEventListener("input", () => this._valueChanged(field));
+      }
+    });
+  }
+
+  private _valueChanged(field: Element): void {
+    const name = (field as HTMLElement).dataset.field as
+      | keyof AssistPipelineCardConfig
+      | undefined;
+    if (!name) {
+      return;
+    }
+
+    const value =
+      field instanceof HTMLInputElement && field.type === "checkbox"
+        ? field.checked
+        : (field as HTMLInputElement | HTMLSelectElement).value;
+
+    const nextConfig = {
+      ...this._config,
+      [name]: value,
+    };
+
+    this._config = nextConfig;
+    this.dispatchEvent(
+      new CustomEvent("config-changed", {
+        bubbles: true,
+        composed: true,
+        detail: {
+          config: nextConfig,
+        },
+      })
+    );
+    this._render();
+  }
+}
+
 const escapeHtml = (value: string): string =>
   value.replace(/[&<>"']/g, (char) => {
     switch (char) {
@@ -636,12 +956,28 @@ const errorMessage = (error: unknown): string => {
   return "unknown error";
 };
 
+const optionTemplate = (
+  value: string,
+  label: string,
+  selectedValue: string
+): string => `
+  <option value="${escapeHtml(value)}" ${
+    value === selectedValue ? "selected" : ""
+  }>
+    ${escapeHtml(label)}
+  </option>
+`;
+
 if (!customElements.get(CARD_TAG)) {
   customElements.define(CARD_TAG, AssistPipelineCard);
 }
 
 if (!customElements.get(HACS_CARD_TAG)) {
   customElements.define(HACS_CARD_TAG, HacsAssistPipelineCard);
+}
+
+if (!customElements.get("assist-pipeline-card-editor")) {
+  customElements.define("assist-pipeline-card-editor", AssistPipelineCardEditor);
 }
 
 window.customCards = window.customCards ?? [];

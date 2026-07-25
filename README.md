@@ -30,6 +30,8 @@ name: Assist
 icon: mdi:comment-processing-outline
 appearance: chat
 pipeline_id: last_used
+input_mode: text
+show_pipeline_selector: true
 ```
 
 If Home Assistant reports `Custom element not found: custom:assist-pipeline-card`, the card module is not loaded in that browser session. Confirm the dashboard resource is:
@@ -58,8 +60,12 @@ The import should print `Assist Pipeline Card v0.1.2 loaded`. If it does not, Ho
 | `icon` | string | `mdi:comment-processing-outline` | Icon shown on the button. |
 | `pipeline_id` | string | `last_used` | Assist pipeline to use. Use `preferred`, `last_used`, or a specific pipeline id. |
 | `appearance` | string | `chat` | Use `chat` for embedded text chat, `card` for a native Assist dialog opener card, or `button` for a compact opener. |
+| `input_mode` | string | `text` | Use `text` for embedded chat or `audio` for a native Assist dialog button. |
+| `show_pipeline_selector` | boolean | `true` | Show a compact pipeline selector in the card header. |
 | `placeholder` | string | `Ask Assist` | Placeholder text for the embedded chat input. |
 | `start_listening` | boolean | `false` | For `card` or `button` appearance, whether the native Assist dialog should start voice capture immediately. |
+
+The card includes a Lovelace visual editor with controls for appearance, input mode, default pipeline, the header pipeline selector, voice start behavior, label, icon, and placeholder.
 
 ## Development
 
