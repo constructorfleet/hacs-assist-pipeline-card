@@ -1,6 +1,6 @@
 const CARD_TAG = "assist-pipeline-card";
 const HACS_CARD_TAG = "hacs-assist-pipeline-card";
-const CARD_VERSION = "0.1.5";
+const CARD_VERSION = "0.1.6";
 const DEFAULT_NAME = "Assist";
 const DEFAULT_ICON = "mdi:comment-processing-outline";
 
@@ -561,11 +561,10 @@ export class AssistPipelineCard extends HTMLElement {
           <div class="messages">
             ${this._messages
               .map(
-                (message) => `
-                  <div class="message ${message.who}${message.error ? " error" : ""}">
-                    ${escapeHtml(message.text)}
-                  </div>
-                `
+                (message) =>
+                  `<div class="message ${message.who}${
+                    message.error ? " error" : ""
+                  }">${escapeHtml(message.text)}</div>`
               )
               .join("")}
           </div>
@@ -731,9 +730,12 @@ class AssistPipelineCardEditor extends HTMLElement {
   }
 
   public set hass(value: HomeAssistantLike | undefined) {
+    const hadHass = Boolean(this._hass);
     this._hass = value;
-    this._render();
-    void this._loadPipelines();
+    if (value && !hadHass) {
+      this._render();
+      void this._loadPipelines();
+    }
   }
 
   public get hass(): HomeAssistantLike | undefined {
@@ -817,6 +819,10 @@ class AssistPipelineCardEditor extends HTMLElement {
           width: 100%;
         }
 
+        ha-icon-picker {
+          width: 100%;
+        }
+
         .check {
           align-items: center;
           color: var(--primary-text-color);
@@ -837,7 +843,17 @@ class AssistPipelineCardEditor extends HTMLElement {
         </label>
         <label>
           Icon
-          <input data-field="icon" type="text" value="${escapeHtml(config.icon)}" />
+          ${
+            customElements.get("ha-icon-picker")
+              ? `
+                <ha-icon-picker
+                  data-field="icon"
+                  label="Icon"
+                  value="${escapeHtml(config.icon)}"
+                ></ha-icon-picker>
+              `
+              : `<input data-field="icon" type="text" value="${escapeHtml(config.icon)}" />`
+          }
         </label>
         <label>
           Appearance
@@ -888,8 +904,9 @@ class AssistPipelineCardEditor extends HTMLElement {
       </div>
     `;
 
-    root.querySelectorAll("input, select").forEach((field) => {
+    root.querySelectorAll("input, select, ha-icon-picker").forEach((field) => {
       field.addEventListener("change", () => this._valueChanged(field));
+      field.addEventListener("value-changed", () => this._valueChanged(field));
       if (field instanceof HTMLInputElement && field.type === "text") {
         field.addEventListener("input", () => this._valueChanged(field));
       }
@@ -907,7 +924,8 @@ class AssistPipelineCardEditor extends HTMLElement {
     const value =
       field instanceof HTMLInputElement && field.type === "checkbox"
         ? field.checked
-        : (field as HTMLInputElement | HTMLSelectElement).value;
+        : (field as HTMLInputElement | HTMLSelectElement).value ??
+          (field as HTMLElement & { value?: string }).value;
 
     const nextConfig = {
       ...this._config,
@@ -924,7 +942,6 @@ class AssistPipelineCardEditor extends HTMLElement {
         },
       })
     );
-    this._render();
   }
 }
 

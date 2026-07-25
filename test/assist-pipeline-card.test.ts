@@ -184,6 +184,44 @@ describe("AssistPipelineCard", () => {
     expect(editor.shadowRoot?.textContent).toContain("Preferred");
   });
 
+  it("does not rerender visual editor controls on routine hass updates", async () => {
+    const editor = AssistPipelineCard.getConfigElement() as HTMLElement & {
+      hass: TestHass;
+      setConfig(config: AssistPipelineCardConfig): void;
+    };
+    const harness = createHass();
+    document.body.appendChild(editor);
+    editor.setConfig({ name: "Assist" });
+    editor.hass = harness.hass;
+    await Promise.resolve();
+    await Promise.resolve();
+    const pipelineSelect = editor.shadowRoot?.querySelector(
+      '[data-field="pipeline_id"]'
+    );
+
+    editor.hass = harness.hass;
+    editor.hass = harness.hass;
+
+    expect(editor.shadowRoot?.querySelector('[data-field="pipeline_id"]')).toBe(
+      pipelineSelect
+    );
+  });
+
+  it("uses Home Assistant icon picker when it is available", () => {
+    if (!customElements.get("ha-icon-picker")) {
+      customElements.define("ha-icon-picker", class extends HTMLElement {});
+    }
+    const editor = AssistPipelineCard.getConfigElement() as HTMLElement & {
+      setConfig(config: AssistPipelineCardConfig): void;
+    };
+    document.body.appendChild(editor);
+
+    editor.setConfig({ icon: "mdi:home-assistant" });
+
+    expect(editor.shadowRoot?.querySelector("ha-icon-picker")).not.toBeNull();
+    expect(editor.shadowRoot?.querySelector('[data-field="icon"]')).not.toBeNull();
+  });
+
   it("emits config changes from the visual editor", () => {
     const editor = AssistPipelineCard.getConfigElement() as HTMLElement & {
       setConfig(config: AssistPipelineCardConfig): void;
@@ -203,6 +241,7 @@ describe("AssistPipelineCard", () => {
     input.dispatchEvent(new Event("input"));
 
     expect(config?.name).toBe("Kitchen Assist");
+    expect(editor.shadowRoot?.querySelector('[data-field="name"]')).toBe(input);
   });
 
   it("sends text through the Assist pipeline websocket and renders the reply", async () => {
