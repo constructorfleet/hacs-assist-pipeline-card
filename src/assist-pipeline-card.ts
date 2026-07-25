@@ -1,6 +1,6 @@
 const CARD_TAG = "assist-pipeline-card";
 const HACS_CARD_TAG = "hacs-assist-pipeline-card";
-const CARD_VERSION = "0.1.3";
+const CARD_VERSION = "0.1.4";
 const DEFAULT_NAME = "Assist";
 const DEFAULT_ICON = "mdi:comment-processing-outline";
 
@@ -99,6 +99,7 @@ export class AssistPipelineCard extends HTMLElement {
   private _pipeline?: AssistPipeline;
   private _preferredPipeline?: string;
   private _lastUsedPipeline?: string;
+  private _pipelineLoadKey?: string;
   private _loading = false;
   private _processing = false;
   private _conversationId: string | null = null;
@@ -117,6 +118,7 @@ export class AssistPipelineCard extends HTMLElement {
       throw new Error("appearance must be 'chat', 'card', or 'button'");
     }
 
+    const previousConfig = this._config;
     this._config = {
       name: config.name ?? DEFAULT_NAME,
       icon: config.icon ?? DEFAULT_ICON,
@@ -125,14 +127,22 @@ export class AssistPipelineCard extends HTMLElement {
       appearance: config.appearance ?? "chat",
       placeholder: config.placeholder ?? "Ask Assist",
     };
+
+    if (
+      previousConfig.appearance !== this._config.appearance ||
+      previousConfig.pipeline_id !== this._config.pipeline_id
+    ) {
+      this._pipeline = undefined;
+      this._pipelineLoadKey = undefined;
+    }
+
     this._render();
+    this._ensurePipelineLoaded();
   }
 
   public set hass(value: HomeAssistantLike | undefined) {
     this._hass = value;
-    if (value && this._config.appearance === "chat") {
-      void this._loadPipeline();
-    }
+    this._ensurePipelineLoaded();
   }
 
   public get hass(): HomeAssistantLike | undefined {
@@ -167,8 +177,22 @@ export class AssistPipelineCard extends HTMLElement {
     };
   }
 
-  private async _loadPipeline(): Promise<void> {
-    if (!this.hass || this._loading) {
+  private _ensurePipelineLoaded(): void {
+    if (!this.hass || this._config.appearance !== "chat") {
+      return;
+    }
+
+    const loadKey = String(this._config.pipeline_id);
+    if (this._loading || this._pipelineLoadKey === loadKey) {
+      return;
+    }
+
+    this._pipelineLoadKey = loadKey;
+    void this._loadPipeline(loadKey);
+  }
+
+  private async _loadPipeline(loadKey: string): Promise<void> {
+    if (!this.hass) {
       return;
     }
 
@@ -184,10 +208,14 @@ export class AssistPipelineCard extends HTMLElement {
       });
       this._preferredPipeline = list.preferred_pipeline ?? undefined;
       const pipelineId = this._resolvePipelineId(list.pipelines);
-      this._pipeline = await this.hass.callWS<AssistPipeline>({
+      const pipeline = await this.hass.callWS<AssistPipeline>({
         type: "assist_pipeline/pipeline/get",
         pipeline_id: pipelineId,
       });
+      if (loadKey !== String(this._config.pipeline_id)) {
+        return;
+      }
+      this._pipeline = pipeline;
       this._lastUsedPipeline = this._pipeline.id;
     } catch (error) {
       this._messages = [
@@ -472,7 +500,7 @@ export class AssistPipelineCard extends HTMLElement {
     }
 
     if (!this._pipeline) {
-      await this._loadPipeline();
+      this._ensurePipelineLoaded();
     }
 
     if (!this._pipeline) {

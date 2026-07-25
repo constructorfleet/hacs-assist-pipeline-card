@@ -1,9 +1,9 @@
-const c = "assist-pipeline-card", d = "hacs-assist-pipeline-card", m = "0.1.3", u = "Assist", _ = "mdi:comment-processing-outline";
+const c = "assist-pipeline-card", d = "hacs-assist-pipeline-card", m = "0.1.4", _ = "Assist", u = "mdi:comment-processing-outline";
 class f extends HTMLElement {
   constructor() {
     super(...arguments), this._config = {
-      name: u,
-      icon: _,
+      name: _,
+      icon: u,
       pipeline_id: "last_used",
       start_listening: !1,
       appearance: "chat",
@@ -18,17 +18,18 @@ class f extends HTMLElement {
   setConfig(e) {
     if (e.appearance && !["card", "button", "chat"].includes(e.appearance))
       throw new Error("appearance must be 'chat', 'card', or 'button'");
+    const i = this._config;
     this._config = {
-      name: e.name ?? u,
-      icon: e.icon ?? _,
+      name: e.name ?? _,
+      icon: e.icon ?? u,
       pipeline_id: e.pipeline_id ?? "last_used",
       start_listening: e.start_listening ?? !1,
       appearance: e.appearance ?? "chat",
       placeholder: e.placeholder ?? "Ask Assist"
-    }, this._render();
+    }, (i.appearance !== this._config.appearance || i.pipeline_id !== this._config.pipeline_id) && (this._pipeline = void 0, this._pipelineLoadKey = void 0), this._render(), this._ensurePipelineLoaded();
   }
   set hass(e) {
-    this._hass = e, e && this._config.appearance === "chat" && this._loadPipeline();
+    this._hass = e, this._ensurePipelineLoaded();
   }
   get hass() {
     return this._hass;
@@ -51,24 +52,32 @@ class f extends HTMLElement {
       appearance: "chat"
     };
   }
-  async _loadPipeline() {
-    if (!(!this.hass || this._loading)) {
+  _ensurePipelineLoaded() {
+    if (!this.hass || this._config.appearance !== "chat")
+      return;
+    const e = String(this._config.pipeline_id);
+    this._loading || this._pipelineLoadKey === e || (this._pipelineLoadKey = e, this._loadPipeline(e));
+  }
+  async _loadPipeline(e) {
+    if (this.hass) {
       this._loading = !0, this._render();
       try {
-        const e = await this.hass.callWS({
+        const i = await this.hass.callWS({
           type: "assist_pipeline/pipeline/list"
         });
-        this._preferredPipeline = e.preferred_pipeline ?? void 0;
-        const i = this._resolvePipelineId(e.pipelines);
-        this._pipeline = await this.hass.callWS({
+        this._preferredPipeline = i.preferred_pipeline ?? void 0;
+        const s = this._resolvePipelineId(i.pipelines), t = await this.hass.callWS({
           type: "assist_pipeline/pipeline/get",
-          pipeline_id: i
-        }), this._lastUsedPipeline = this._pipeline.id;
-      } catch (e) {
+          pipeline_id: s
+        });
+        if (e !== String(this._config.pipeline_id))
+          return;
+        this._pipeline = t, this._lastUsedPipeline = this._pipeline.id;
+      } catch (i) {
         this._messages = [
           {
             who: "hass",
-            text: `Could not load Assist pipeline: ${g(e)}`,
+            text: `Could not load Assist pipeline: ${g(i)}`,
             error: !0
           }
         ];
@@ -78,19 +87,19 @@ class f extends HTMLElement {
     }
   }
   _resolvePipelineId(e) {
-    var n, t;
+    var s, t;
     if (this._config.pipeline_id === "preferred")
       return this._preferredPipeline;
     if (this._config.pipeline_id === "last_used")
-      return this._lastUsedPipeline ?? this._preferredPipeline ?? ((n = e[0]) == null ? void 0 : n.id);
+      return this._lastUsedPipeline ?? this._preferredPipeline ?? ((s = e[0]) == null ? void 0 : s.id);
     const i = e.find(
-      (o) => o.id === this._config.pipeline_id
+      (a) => a.id === this._config.pipeline_id
     );
     return (i == null ? void 0 : i.id) ?? this._preferredPipeline ?? ((t = e[0]) == null ? void 0 : t.id);
   }
   _render() {
-    var o, s;
-    const e = this.shadowRoot ?? this.attachShadow({ mode: "open" }), i = this._config.appearance === "button", n = ["button", "card"].includes(this._config.appearance);
+    var a, n;
+    const e = this.shadowRoot ?? this.attachShadow({ mode: "open" }), i = this._config.appearance === "button", s = ["button", "card"].includes(this._config.appearance);
     e.innerHTML = `
       <style>
         :host {
@@ -248,10 +257,10 @@ class f extends HTMLElement {
           padding: 0 12px;
         }
       </style>
-      ${n ? i ? this._buttonTemplate() : `<ha-card>${this._buttonTemplate()}</ha-card>` : this._chatTemplate()}
-    `, (o = e.querySelector(".open-button")) == null || o.addEventListener("click", () => {
+      ${s ? i ? this._buttonTemplate() : `<ha-card>${this._buttonTemplate()}</ha-card>` : this._chatTemplate()}
+    `, (a = e.querySelector(".open-button")) == null || a.addEventListener("click", () => {
       this._openAssistDialog();
-    }), (s = e.querySelector("form")) == null || s.addEventListener("submit", (p) => {
+    }), (n = e.querySelector("form")) == null || n.addEventListener("submit", (p) => {
       p.preventDefault();
       const l = e.querySelector("input"), h = l == null ? void 0 : l.value.trim();
       h && (l.value = "", this._sendMessage(h));
@@ -262,11 +271,11 @@ class f extends HTMLElement {
   _buttonTemplate() {
     return `
       <div class="button-content">
-        <button class="open-button" type="button" aria-label="${r(
+        <button class="open-button" type="button" aria-label="${o(
       this._config.name
     )}">
-          <ha-icon icon="${r(this._config.icon)}"></ha-icon>
-          <span class="label">${r(this._config.name)}</span>
+          <ha-icon icon="${o(this._config.icon)}"></ha-icon>
+          <span class="label">${o(this._config.name)}</span>
         </button>
       </div>
     `;
@@ -277,9 +286,9 @@ class f extends HTMLElement {
       <ha-card>
         <div class="chat">
           <div class="header">
-            <ha-icon icon="${r(this._config.icon)}"></ha-icon>
-            <div class="title">${r(this._config.name)}</div>
-            <div class="pipeline">${r(
+            <ha-icon icon="${o(this._config.icon)}"></ha-icon>
+            <div class="title">${o(this._config.name)}</div>
+            <div class="pipeline">${o(
       this._loading ? "Loading..." : ((e = this._pipeline) == null ? void 0 : e.name) ?? "No pipeline"
     )}</div>
           </div>
@@ -287,7 +296,7 @@ class f extends HTMLElement {
             ${this._messages.map(
       (i) => `
                   <div class="message ${i.who}${i.error ? " error" : ""}">
-                    ${r(i.text)}
+                    ${o(i.text)}
                   </div>
                 `
     ).join("")}
@@ -296,7 +305,7 @@ class f extends HTMLElement {
             <input
               type="text"
               autocomplete="off"
-              placeholder="${r(this._config.placeholder)}"
+              placeholder="${o(this._config.placeholder)}"
               ${this._processing || this._loading || !this._pipeline ? "disabled" : ""}
             />
             <button
@@ -313,17 +322,17 @@ class f extends HTMLElement {
     `;
   }
   async _sendMessage(e) {
-    if (!this.hass || this._processing || (this._pipeline || await this._loadPipeline(), !this._pipeline))
+    if (!this.hass || this._processing || (this._pipeline || this._ensurePipelineLoaded(), !this._pipeline))
       return;
     this._processing = !0;
     const i = { who: "hass", text: "...", pending: !0 };
     this._messages = [...this._messages, { who: "user", text: e }, i], this._render();
-    let n;
+    let s;
     try {
-      n = await this.hass.connection.subscribeMessage(
+      s = await this.hass.connection.subscribeMessage(
         (t) => {
           this._processPipelineEvent(t, i, () => {
-            n == null || n();
+            s == null || s();
           });
         },
         {
@@ -339,21 +348,21 @@ class f extends HTMLElement {
       i.text = `Error starting Assist: ${g(t)}`, i.error = !0, i.pending = !1, this._processing = !1, this._render();
     }
   }
-  _processPipelineEvent(e, i, n) {
-    var t, o;
+  _processPipelineEvent(e, i, s) {
+    var t, a;
     if (e.type === "intent-progress") {
-      const s = e.data.chat_log_delta;
-      (s == null ? void 0 : s.role) === "assistant" && s.content && (i.text = i.pending ? s.content : `${i.text}${s.content}`, i.pending = !1, this._render());
+      const n = e.data.chat_log_delta;
+      (n == null ? void 0 : n.role) === "assistant" && n.content && (i.text = i.pending ? n.content : `${i.text}${n.content}`, i.pending = !1, this._render());
       return;
     }
     if (e.type === "intent-end") {
-      const s = e.data.intent_output;
-      this._conversationId = s.conversation_id;
-      const p = (o = (t = s.response.speech) == null ? void 0 : t.plain) == null ? void 0 : o.speech;
-      p ? i.text = p : i.pending && (i.text = ""), i.error = s.response.response_type === "error", i.pending = !1, this._processing = !1, n(), this._render();
+      const n = e.data.intent_output;
+      this._conversationId = n.conversation_id;
+      const p = (a = (t = n.response.speech) == null ? void 0 : t.plain) == null ? void 0 : a.speech;
+      p ? i.text = p : i.pending && (i.text = ""), i.error = n.response.response_type === "error", i.pending = !1, this._processing = !1, s(), this._render();
       return;
     }
-    e.type === "error" && (i.text = e.data.message, i.error = !0, i.pending = !1, this._processing = !1, n(), this._render());
+    e.type === "error" && (i.text = e.data.message, i.error = !0, i.pending = !1, this._processing = !1, s(), this._render());
   }
   _openAssistDialog() {
     const e = new Event("hass-action", {
@@ -374,7 +383,7 @@ class f extends HTMLElement {
 }
 class x extends f {
 }
-const r = (a) => a.replace(/[&<>"']/g, (e) => {
+const o = (r) => r.replace(/[&<>"']/g, (e) => {
   switch (e) {
     case "&":
       return "&amp;";
@@ -389,7 +398,7 @@ const r = (a) => a.replace(/[&<>"']/g, (e) => {
     default:
       return e;
   }
-}), g = (a) => a instanceof Error ? a.message : typeof a == "string" ? a : "unknown error";
+}), g = (r) => r instanceof Error ? r.message : typeof r == "string" ? r : "unknown error";
 customElements.get(c) || customElements.define(c, f);
 customElements.get(d) || customElements.define(d, x);
 window.customCards = window.customCards ?? [];

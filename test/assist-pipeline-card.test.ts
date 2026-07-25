@@ -114,6 +114,22 @@ describe("AssistPipelineCard", () => {
     expect(card.getCardSize()).toBe(5);
   });
 
+  it("does not reload the pipeline on routine hass updates", async () => {
+    const { card, hass, callWS } = await createCard();
+    const input = card.shadowRoot?.querySelector("input");
+    input!.value = "half typed command";
+
+    card.hass = hass;
+    card.hass = hass;
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(callWS).toHaveBeenCalledTimes(2);
+    expect(card.shadowRoot?.querySelector("input")?.value).toBe(
+      "half typed command"
+    );
+  });
+
   it("registers both dashboard element names", () => {
     expect(customElements.get("assist-pipeline-card")).toBe(AssistPipelineCard);
     expect(customElements.get("hacs-assist-pipeline-card")).toBeDefined();
